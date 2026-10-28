@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MediQueue AI – Hospital Queue Management (Demo)</title>
+<style>
+/* ===== Theme ===== */
+:root{--navy:#0b2a4a;--teal:#0d9488;--sky:#e0f2fe;--green:#16a34a;--red:#dc2626;--amber:#d97706;--bg:#f6fafd;--text:#1e293b;--muted:#64748b;--shadow:0 4px 18px rgba(11,42,74,.08)}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.demo-bar{background:var(--navy);color:#bae6fd;text-align:center;font-size:.78rem;padding:4px 8px}
+/* ===== Header ===== */
+.top{position:sticky;top:0;z-index:50;background:#fff;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:10px 20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--navy);font-size:1.15rem}
+.brand small{display:block;font-weight:400;font-size:.68rem;color:var(--muted)}
+.brand b{color:var(--teal)}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--teal),var(--navy));color:#fff;display:grid;place-items:center}
+nav{display:flex;gap:2px;flex:1;flex-wrap:wrap;justify-content:center}
+nav a{padding:8px 11px;border-radius:8px;font-size:.88rem;color:var(--navy);transition:.2s}
+nav a:hover{background:var(--sky)}
+nav a.active{background:var(--navy);color:#fff}
+.clock{font-variant-numeric:tabular-nums;font-size:.85rem;color:var(--muted);text-align:right}
+.burger{display:none;margin-left:auto;background:none;border:0;font-size:1.4rem;color:var(--navy);cursor:pointer}
+/* ===== Layout ===== */
+main{max-width:1200px;margin:auto;padding:20px 16px}
+.page{display:none;animation:fade .35s}
+.page.show{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ptitle{color:var(--navy);margin-bottom:14px;font-size:1.6rem}
+.hero{background:#0b2a4a;color:#fff;border-radius:20px;padding:34px;display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.hero h1{font-size:2rem;margin-bottom:8px}.hero p{max-width:520px;margin-bottom:16px;opacity:.92}
+.hero-art{width:200px;max-width:100%}
+.cards,.cards3{display:grid;gap:14px;margin-bottom:20px}
+.cards{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.cards3{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:16px}
+.card{background:#fff;border-radius:16px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px;min-width:0}
+.grid2>.card,.cards>.card{margin-bottom:0}
+.card h2{font-size:1.05rem;color:var(--navy);margin:6px 0 10px}
+.card h2 i{color:var(--teal);margin-right:6px}
+.stat{display:flex;align-items:center;gap:14px;transition:.2s}.stat:hover{transform:translateY(-3px)}
+.stat .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:1.2rem;background:var(--sky);color:var(--navy)}
+.stat b{font-size:1.6rem;color:var(--navy);display:block;line-height:1.1}.stat span{font-size:.8rem;color:var(--muted)}
+.services{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.svc{background:var(--sky);border-radius:12px;padding:10px;font-size:.85rem}.svc b{display:block;color:var(--navy)}
+/* ===== Forms & buttons ===== */
+label,legend{display:block;font-size:.85rem;font-weight:600;margin:10px 0 4px;color:var(--navy)}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid #cbd5e1;border-radius:10px;font:inherit;background:#fff}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav a:focus-visible{outline:3px solid #99f6e4;border-color:var(--teal)}
+input.bad,select.bad,textarea.bad{border-color:var(--red)}
+.err{color:var(--red);font-size:.78rem;display:block;min-height:1em}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+fieldset{border:0;margin:6px 0 14px}.pill{display:inline-flex;gap:5px;align-items:center;font-weight:500;margin:2px 10px 2px 0}.pill input{width:auto}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:10px;border:0;font:inherit;font-weight:600;cursor:pointer;transition:.2s}
+.btn.primary{background:var(--teal);color:#fff}.btn.primary:hover{background:#0f766e;transform:translateY(-1px)}
+.btn.ghost{background:transparent;border:1.5px solid currentColor;color:inherit}.card .btn.ghost{color:var(--navy)}
+.btn.danger{background:#fee2e2;color:var(--red)}.btn.sm{padding:5px 11px;font-size:.8rem;margin-top:8px}
+.hero .btn{margin-right:8px}
+.inline,.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.filters>*{flex:1 1 150px;width:auto}.filters label{flex:0 0 auto;margin:0}
+.note{font-size:.85rem;color:var(--muted);margin-top:10px}.warn{background:#fffbeb;border-left:4px solid var(--amber);padding:8px 12px;border-radius:8px;color:#92400e;margin-bottom:12px}
+/* ===== Tables & badges ===== */
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{background:var(--sky);color:var(--navy);text-align:left;padding:9px;white-space:nowrap}
+td{padding:9px;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+tr:hover td{background:#f8fbff}tr.emg td{background:#fef2f2}
+.empty{text-align:center;color:var(--muted);padding:24px!important}
+.b{padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;display:inline-block}
+.b.emergency{background:#fee2e2;color:var(--red)}.b.urgent{background:#fef3c7;color:var(--amber)}.b.routine{background:#dcfce7;color:var(--green)}
+.b.Waiting{background:#e0f2fe;color:#0369a1}.b.Called{background:#fef3c7;color:var(--amber)}.b.In\ Consultation{background:#ccfbf1;color:var(--teal)}.b.Completed{background:#e2e8f0;color:#475569}
+.mini{border:0;background:var(--sky);color:var(--navy);border-radius:8px;padding:5px 9px;margin:0 2px;cursor:pointer;font-size:.78rem;font-weight:600}.mini:hover{background:var(--teal);color:#fff}.mini.x{background:#fee2e2;color:var(--red)}
+/* ===== Doctors / prediction / misc ===== */
+.doc h3{color:var(--navy)}.doc .spec{color:var(--muted);font-size:.85rem}.doc p{margin:6px 0;font-size:.9rem}
+.doc .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.doc select{margin-top:6px}
+.bignum{font-size:2.4rem;font-weight:800;color:var(--teal);margin-top:14px}.bignum small{display:block;font-size:.8rem;font-weight:400;color:var(--muted)}
+.how{padding-left:18px;font-size:.9rem}.how li{margin-bottom:6px}
+.chartbox{position:relative;height:280px}
+.success{border-left:5px solid var(--green)}.success .tok{font-size:2rem;font-weight:800;color:var(--navy)}
+ul{padding-left:20px}footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px}
+/* ===== Toasts & loader ===== */
+#toasts{position:fixed;right:14px;bottom:14px;z-index:99;display:grid;gap:8px;max-width:calc(100vw - 28px)}
+.toast{background:var(--navy);color:#fff;padding:11px 16px;border-radius:10px;box-shadow:var(--shadow);animation:fade .3s}.toast.error{background:var(--red)}.toast.ok{background:var(--green)}
+.loader{position:fixed;inset:0;background:rgba(255,255,255,.6);display:grid;place-items:center;z-index:98}
+.loader span{width:42px;height:42px;border:5px solid var(--sky);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.gs{flex:1 1 180px;max-width:300px;width:auto;border-radius:99px}.tools{display:flex;gap:6px;align-items:center}.tools .mini{font-size:1rem;position:relative;margin:0}
+.dot{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;border-radius:99px;font-size:.65rem;padding:0 5px}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:.75rem;font-weight:700}
+.hero{background:linear-gradient(120deg,#0b2a4a,#0e5a73 60%,#0d9488);box-shadow:0 0 60px rgba(13,148,136,.3)}.hero-art{animation:fl 4s ease-in-out infinite}@keyframes fl{50%{transform:translateY(-10px)}}
+.live{color:#5eead4;font-size:.8rem;font-weight:700;animation:pl 1.4s infinite;display:block}@keyframes pl{50%{opacity:.35}}
+.sec{color:var(--navy);margin:28px 0 12px;font-size:1.3rem}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.steps div{background:#fff;border-radius:14px;padding:14px;box-shadow:var(--shadow);font-size:.9rem}.steps b{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--teal);color:#fff;margin-bottom:6px}
+details{background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:8px;box-shadow:var(--shadow)}summary{cursor:pointer;font-weight:600;color:var(--navy)}details p{margin-top:8px;font-size:.9rem}
+.feed{list-style:none;padding:0}.feed li{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:.9rem;align-items:center}.feed li.unread{font-weight:600;border-left:4px solid var(--teal);padding-left:8px}.feed small{color:var(--muted);font-weight:400}
+.bar{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e2e8f0;font-size:.9rem}
+.meter{height:8px;background:var(--sky);border-radius:9px;overflow:hidden;margin:8px 0}.meter i{display:block;height:100%;background:linear-gradient(90deg,#0d9488,#2563eb);transition:width .6s}
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}.board div{background:linear-gradient(135deg,#0b2a4a,#0e5a73);color:#fff;border-radius:14px;padding:14px;text-align:center}.board small{opacity:.8}.board b{display:block;font-size:1.4rem}
+.room{text-align:center;background:linear-gradient(160deg,#0b2a4a,#0e5a73);color:#fff;border-radius:20px;padding:28px}.room h1,.room h2{color:#fff;margin:12px 0}.rbig{font-size:clamp(4rem,14vw,9rem);font-weight:800;color:#5eead4;text-shadow:0 0 40px rgba(94,234,212,.6);line-height:1.1}.rsub{font-size:1.2rem}
+.rnext{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}.rtok{background:rgba(255,255,255,.12);padding:10px 20px;border-radius:12px;font-size:1.6rem;font-weight:700}.rtok.first{background:#0d9488}
+.rdepts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;text-align:left}.rdepts .svc{background:rgba(255,255,255,.1);color:#fff}.rdepts .svc b{color:#fff}.rclock{font-size:1.6rem;font-variant-numeric:tabular-nums}.rhelp{opacity:.85;margin-top:16px}.room.full{position:fixed;inset:0;z-index:200;overflow:auto;border-radius:0}
+@media(min-width:901px){nav{position:fixed;left:0;top:96px;bottom:0;width:224px;flex:none;flex-direction:column;flex-wrap:nowrap;justify-content:flex-start;overflow:auto;background:#fff;padding:12px;box-shadow:var(--shadow)}nav a{padding:9px 12px}main{margin-left:224px;max-width:1250px}footer{margin-left:224px}}
+:root.dark{--bg:#0a1628;--text:#e2e8f0;--sky:#12304f;--muted:#94a3b8;--navy:#bae6fd;
+.card,.top,input,select,textarea,details,.steps div,nav{background:#10233d}.top{box-shadow:none}td,.feed li,.bar{border-color:#1e3a5f}tr:hover td{background:#152c4a}tr.emg td{background:#3b1a1f}
+.demo-bar{background:#06101f}.warn{background:#3a2a0b;color:#fcd34d}.mini{color:#e0f2fe}input,select,textarea{border-color:#2b4a70;color:var(--text)}nav a.active{background:var(--teal);color:#fff}.card .btn.ghost{color:#bae6fd}.hero .btn.ghost,.room .btn.ghost{color:#fff}}
+@media print{.demo-bar,.top,nav,footer,#toasts,.btn,.filters{display:none!important}main{margin:0!important}.page{display:none!important}.page.show{display:block!important}}
+/* ===== Responsive ===== */
+@media(max-width:900px){.burger{display:block}.clock{display:none}nav{display:none;flex-basis:100%;flex-direction:column}nav.open{display:flex}.hero{padding:22px}.hero h1{font-size:1.5rem}}
+@media(max-width:560px){.row2{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}.top{padding:10px 12px}}
+.fa-solid,.fa-regular{font-style:normal;font-family:inherit}
+.fa-heart-pulse::before{content:"❤"}
+.fa-bars::before{content:"☰"}
+.fa-user-plus::before{content:"➕"}
+.fa-list-ol::before{content:"📋"}
+.fa-hospital::before{content:"🏥"}
+.fa-clipboard-user::before{content:"📝"}
+.fa-ticket::before{content:"🎫"}
+.fa-magnifying-glass::before{content:"🔍"}
+.fa-triangle-exclamation::before{content:"⚠"}
+.fa-bullhorn::before{content:"📢"}
+.fa-flask::before{content:"🧪"}
+.fa-calculator::before{content:"🧮"}
+.fa-circle-info::before{content:"ℹ"}
+.fa-file-csv::before{content:"📄"}
+.fa-location-dot::before{content:"📍"}
+.fa-phone::before{content:"📞"}
+.fa-envelope::before{content:"✉"}
+.fa-rotate-left::before{content:"↺"}
+.fa-users::before{content:"👥"}
+.fa-hourglass-half::before{content:"⏳"}
+.fa-user-doctor::before{content:"🩺"}
+.fa-clock::before{content:"🕒"}
+.fa-circle-check::before{content:"✅"}
+.fa-folder-open::before{content:"📂"}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.card,.top,input,select,textarea{background:#10233d}.top{box-shadow:none}td{border-color:#1e3a5f}tr:hover td{background:#152c4a}tr.emg td{background:#3b1a1f}.hero{color:#fff}.hero .btn.ghost,.hero h1{color:#fff}.demo-bar{background:#06101f}.warn{background:#3a2a0b;color:#fcd34d}.mini{color:#e0f2fe}.logo{color:#fff}input,select,textarea{border-color:#2b4a70;color:var(--text)}nav a.active{background:var(--teal);color:#fff}.card .btn.ghost{color:#bae6fd}}
+
+</style>
+</head>
+<body>
+<div class="demo-bar">DEMO MODE · Fictional demonstration data · College project simulation · Not connected to any real hospital</div>
+<header class="top">
+  <a class="brand" href="#home"><span class="logo">❤</span><span>MediQueue <b>AI</b><small>City Care Hospital (Demo)</small></span></a>
+  <button class="burger" id="burger" aria-label="Toggle menu" aria-expanded="false">☰</button>
+  <input id="gsearch" class="gs" placeholder="Search token or name, press Enter" aria-label="Global search">
+  <div class="tools"><button class="mini" id="bell" aria-label="Notifications">🔔<span id="bellN" class="dot" hidden></span></button><button class="mini" id="themeBtn" aria-label="Toggle light or dark theme">🌓</button><span class="avatar" title="Demo admin (no real login)">DA</span></div>
+  <div class="clock" id="clock"></div>
+  <nav id="nav" aria-label="Main">
+    <a href="#home" data-page="home">🏠 Home</a><a href="#dashboard" data-page="dashboard">📊 Admin Dashboard</a><a href="#register" data-page="register">📝 Patient Registration</a>
+    <a href="#queue" data-page="queue">⏱ Live Queue</a><a href="#doctors" data-page="doctors">🩺 Doctors &amp; Staff</a><a href="#departments" data-page="departments">🏥 Departments</a>
+    <a href="#predict" data-page="predict">🧠 AI Prediction</a><a href="#tracking" data-page="tracking">📍 Patient Tracking</a><a href="#analytics" data-page="analytics">📈 Analytics</a>
+    <a href="#notifications" data-page="notifications">🔔 Notifications</a><a href="#room" data-page="room">📺 Waiting Room</a><a href="#settings" data-page="settings">⚙ Reports &amp; Settings</a><a href="#about" data-page="about">ℹ About</a>
+  </nav>
+</header>
+
+<main>
+<!-- PAGE 1: HOME -->
+<section class="page" id="home">
+  <div class="hero">
+    <div>
+      <span class="live">● LIVE QUEUE · SIMULATED</span><h1>SMARTER QUEUES. FASTER CARE. BETTER HEALTH.</h1>
+      <p>An intelligent hospital queue management platform designed to reduce waiting time, improve patient flow, and help healthcare teams deliver better experiences.</p>
+      <a class="btn primary" href="#register"><i class="fa-solid fa-user-plus"></i> Register as Patient</a>
+      <a class="btn ghost" href="#dashboard">Explore Live Dashboard</a>
+    </div>
+    <svg viewBox="0 0 200 160" class="hero-art" aria-hidden="true"><rect x="40" y="30" width="120" height="110" rx="10" fill="#fff" opacity=".95"/><rect x="85" y="10" width="30" height="40" rx="4" fill="#14b8a6"/><rect x="92" y="56" width="16" height="44" rx="3" fill="#0b2a4a"/><rect x="78" y="70" width="44" height="16" rx="3" fill="#0b2a4a"/><rect x="60" y="108" width="24" height="32" rx="3" fill="#bae6fd"/><rect x="116" y="108" width="24" height="32" rx="3" fill="#bae6fd"/></svg>
+  </div>
+  <div class="cards" id="statCards"></div>
+  <div class="grid2">
+    <div class="card"><h2><i class="fa-solid fa-list-ol"></i> Live Queue Preview</h2><div class="tablewrap"><table><thead><tr><th>Token</th><th>Patient</th><th>Dept</th><th>Priority</th><th>Est. wait</th></tr></thead><tbody id="previewBody"></tbody></table></div><a class="btn ghost sm" href="#queue">Open full queue</a></div>
+    <div class="card"><h2><i class="fa-solid fa-hospital"></i> Hospital Services</h2><div id="services" class="services"></div></div>
+  </div>
+
+  <div class="cards"><div class="card stat"><div><b>-40%</b><span>Waiting-time target (demo figure)</span></div></div><div class="card stat"><div><b>5 min</b><span>Update interval (demo)</span></div></div><div class="card stat"><div><b>8</b><span>Departments modelled</span></div></div><div class="card stat"><div><b>100%</b><span>Fictional data</span></div></div></div>
+  <h2 class="sec">The problem with traditional queues</h2>
+  <div class="grid2"><div class="card"><p>Paper tokens, crowded corridors and no visibility of delays leave patients anxious, while urgent cases can sit unnoticed in a first-come-first-served line and doctors work with no view of the wider flow.</p></div>
+  <div class="card tablewrap"><table><thead><tr><th>Traditional</th><th>AI-assisted (simulated)</th></tr></thead><tbody><tr><td>Unknown wait</td><td>Live estimate in minutes</td></tr><tr><td>First come only</td><td>Priority plus arrival ageing</td></tr><tr><td>Unbalanced doctors</td><td>Workload visible per doctor</td></tr><tr><td>Manual paper logs</td><td>Instant reports and CSV</td></tr></tbody></table></div></div>
+  <h2 class="sec">How it works</h2>
+  <div class="steps"><div><b>1</b>Patient registers and receives a token</div><div><b>2</b>Priority score is calculated</div><div><b>3</b>Queue position and wait are predicted</div><div><b>4</b>Staff call and assign a doctor</div><div><b>5</b>Analytics improve tomorrow's flow</div></div>
+  <h2 class="sec">Features</h2>
+  <div class="cards3"><div class="card"><h2>⏱ Live smart queue</h2><p>Search, filters and one-click calling.</p></div><div class="card"><h2>🧠 Wait prediction</h2><p>What-if simulator for extra doctors.</p></div><div class="card"><h2>🩺 Staff management</h2><p>Assign, reassign and track workload.</p></div><div class="card"><h2>📺 Waiting-room display</h2><p>Privacy-safe, token-only screen.</p></div><div class="card"><h2>🔔 Notification centre</h2><p>Simulated in-app alerts.</p></div><div class="card"><h2>📈 Analytics</h2><p>Charts, reports, CSV and print.</p></div></div>
+  <div class="grid2"><div class="card"><h2>🙂 Patient experience</h2><p>Clear tokens, honest estimates, a tracking portal and fewer crowded corridors.</p></div><div class="card"><h2>👩‍⚕️ Staff benefits</h2><p>One screen for flow, workload and alerts so teams can focus on care.</p></div></div>
+  <div class="card"><h2>⚙ Technology</h2><p>HTML5, CSS3, vanilla JavaScript, Chart.js and browser local storage. No backend and no real AI model: predictions come from a transparent formula.</p></div>
+  <h2 class="sec">Fictional demo testimonials</h2>
+  <div class="cards3"><div class="card"><p>“I always knew how long I would wait.”</p><small>Demo patient A</small></div><div class="card"><p>“Our front desk finally sees the whole picture.”</p><small>Demo nurse B</small></div><div class="card"><p>“Peak hours are easy to plan for now.”</p><small>Demo administrator C</small></div></div>
+  <h2 class="sec">FAQ</h2>
+  <details><summary>Is this connected to a real hospital?</summary><p>No. It is a client-side college demo with fictional data.</p></details>
+  <details><summary>Is the AI real?</summary><p>No. Priority and waiting times use simple, explained formulas.</p></details>
+  <details><summary>Who decides clinical urgency?</summary><p>Qualified healthcare professionals. The software must never triage independently.</p></details>
+  <details><summary>What is needed for production?</summary><p>A secure backend, authentication, encryption, audit logs, privacy safeguards and hospital system integration.</p></details>
+</section>
+
+<!-- PAGE 2: REGISTRATION -->
+<section class="page" id="register">
+  <h1 class="ptitle">Patient Registration</h1>
+  <div class="grid2">
+    <form class="card" id="regForm" novalidate>
+      <h2><i class="fa-solid fa-clipboard-user"></i> New Patient (fictional data only)</h2>
+      <label for="r-name">Full name *</label><input id="r-name" placeholder="e.g. Rahul Sharma"><small class="err" id="e-name"></small>
+      <div class="row2">
+        <div><label for="r-age">Age *</label><input id="r-age" type="number" min="0" max="120"><small class="err" id="e-age"></small></div>
+        <div><label for="r-gender">Gender *</label><select id="r-gender"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select><small class="err" id="e-gender"></small></div>
+      </div>
+      <label for="r-phone">Phone (10 digits) *</label><input id="r-phone" inputmode="numeric" placeholder="9876543210"><small class="err" id="e-phone"></small>
+      <div class="row2">
+        <div><label for="r-dept">Department *</label><select id="r-dept"></select><small class="err" id="e-dept"></small></div>
+        <div><label for="r-doc">Doctor preference</label><select id="r-doc"></select></div>
+      </div>
+      <label for="r-sym">Symptoms *</label><textarea id="r-sym" rows="3" placeholder="Briefly describe symptoms"></textarea><small class="err" id="e-sym"></small>
+      <fieldset><legend>Priority (demo selection) *</legend>
+        <label class="pill"><input type="radio" name="prio" value="routine" checked> Routine</label>
+        <label class="pill"><input type="radio" name="prio" value="urgent"> Urgent</label>
+        <label class="pill"><input type="radio" name="prio" value="emergency"> Emergency</label>
+      </fieldset>
+      <button class="btn primary" type="submit"><i class="fa-solid fa-ticket"></i> Register &amp; Get Token</button>
+    </form>
+    <div>
+      <div class="card" id="regResult" hidden></div>
+      <div class="card"><h2><i class="fa-solid fa-magnifying-glass"></i> Check My Queue Status</h2>
+        <div class="inline"><input id="statusToken" placeholder="Token e.g. T-112" aria-label="Token number"><button class="btn primary" id="statusBtn">Check</button></div>
+        <div id="statusOut" class="note">Enter your token to see your live status.</div></div>
+      <p class="note warn"><i class="fa-solid fa-triangle-exclamation"></i> Priority here is a demo input. Real medical triage must be performed by qualified healthcare professionals.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PAGE 3: LIVE QUEUE -->
+<section class="page" id="queue">
+  <h1 class="ptitle">Live Queue Management</h1>
+  <p class="note warn"><i class="fa-solid fa-triangle-exclamation"></i> Simulated AI priority: emergency &gt; urgent &gt; routine, with arrival-time ageing. Real medical triage must be performed by qualified healthcare professionals.</p>
+  <div class="board" id="board"></div>
+  <div class="card">
+    <div class="filters">
+      <input id="f-search" placeholder="Search token or name" aria-label="Search">
+      <select id="f-dept" aria-label="Department"></select>
+      <select id="f-prio" aria-label="Priority"><option value="">All priorities</option><option value="emergency">Emergency</option><option value="urgent">Urgent</option><option value="routine">Routine</option></select>
+      <select id="f-status" aria-label="Status"><option value="">All statuses</option><option>Waiting</option><option>Called</option><option>In Consultation</option><option>Completed</option></select>
+      <button class="btn primary" id="callNext"><i class="fa-solid fa-bullhorn"></i> Call Next Patient</button>
+    </div>
+    <div class="tablewrap"><table><thead><tr><th>Token</th><th>Patient</th><th>Department</th><th>Priority</th><th>Arrival</th><th>Position</th><th>Est. wait</th><th>Status</th><th>Actions</th></tr></thead><tbody id="queueBody"></tbody></table></div>
+  </div>
+</section>
+
+<!-- PAGE 4: DOCTORS -->
+<section class="page" id="doctors">
+  <h1 class="ptitle">Doctor Dashboard</h1>
+  <div class="cards3" id="docGrid"></div>
+</section>
+
+<!-- PAGE 5: PREDICTION -->
+<section class="page" id="predict">
+  <h1 class="ptitle">AI Waiting-Time Prediction</h1>
+  <p class="note warn"><i class="fa-solid fa-flask"></i> Simulated estimates from a simple formula — not a medically validated AI prediction.</p>
+  <div class="grid2">
+    <div class="card"><h2><i class="fa-solid fa-calculator"></i> Estimate for a new patient</h2>
+      <label for="p-dept">Department</label><select id="p-dept"></select>
+      <label for="p-prio">Priority</label><select id="p-prio"><option value="routine">Routine</option><option value="urgent">Urgent</option><option value="emergency">Emergency</option></select>
+      <button class="btn primary" id="predBtn">Predict</button>
+      <div id="predOut" class="bignum"></div></div>
+    <div class="card"><h2><i class="fa-solid fa-circle-info"></i> How it is calculated</h2>
+      <ol class="how"><li><b>Patients ahead</b> – waiting patients in the same department ranked higher (priority score + ageing).</li>
+      <li><b>Consultation duration</b> – average minutes per department (e.g. Cardiology 15, Dermatology 8).</li>
+      <li><b>Doctor availability</b> – available doctors share the load; if none is free, add half a consultation for the one in progress.</li>
+      <li><b>Formula:</b> if ahead &lt; free doctors → 0 min, else (ahead − free + 1) ÷ doctors × duration (+ ½ duration if none free). No doctor on duty → ahead × duration + 30.</li>
+      <li>Emergency patients rank first, so they have fewer patients ahead.</li></ol></div>
+  </div>
+  <div class="grid2"><div class="card"><h2>What-if simulator</h2><label for="w-dept">Department</label><select id="w-dept"></select><label for="w-extra">Extra doctors: <b id="w-val">1</b></label><input type="range" id="w-extra" min="0" max="3" value="1"><div id="w-out" class="bignum"></div></div>
+  <div class="card"><h2>Estimated vs actual (simulated)</h2><div class="tablewrap"><table><thead><tr><th>Dept</th><th>Congestion</th><th>Predicted (last in line)</th><th>Avg actual</th></tr></thead><tbody id="cmpBody"></tbody></table></div></div></div>
+  <div class="card"><h2>Current predictions</h2><div class="tablewrap"><table><thead><tr><th>Token</th><th>Patient</th><th>Dept</th><th>Priority</th><th>Ahead</th><th>Doctors on duty</th><th>Avg consult</th><th>Predicted wait</th></tr></thead><tbody id="predBody"></tbody></table></div></div>
+</section>
+
+<!-- PAGE 6: ANALYTICS -->
+<section class="page" id="analytics">
+  <h1 class="ptitle">Analytics &amp; Reports</h1>
+  <div class="card filters"><label for="a-date">Date filter</label><input type="date" id="a-date"><button class="btn ghost sm" id="a-clear">All dates</button><button class="btn primary" id="csvBtn"><i class="fa-solid fa-file-csv"></i> Export CSV</button></div>
+  <div class="cards" id="anCards"></div>
+  <div class="grid2"><div class="card"><h2>Patients by department</h2><div class="chartbox"><canvas id="chDept"></canvas></div></div><div class="card"><h2>Daily patient trend (7 days)</h2><div class="chartbox"><canvas id="chTrend"></canvas></div></div></div>
+</section>
+
+<!-- NEW PAGES -->
+<section class="page" id="dashboard"><h1 class="ptitle">Admin Dashboard</h1>
+  <div class="cards" id="kpis"></div>
+  <div class="card"><div class="inline"><a class="btn primary" href="#register">Register patient</a><button class="btn ghost" id="qaCall">Call next patient</button><a class="btn ghost" href="#queue">Open queue</a></div></div>
+  <div class="grid2"><div class="card"><h2>Hourly patient arrivals</h2><div class="chartbox"><canvas id="chHour"></canvas></div></div><div class="card"><h2>Department distribution</h2><div class="chartbox"><canvas id="chPie"></canvas></div></div></div>
+  <div class="grid2"><div class="card"><h2>Recent activity</h2><ul id="feed" class="feed"></ul></div><div class="card"><h2>Doctor availability</h2><div id="docAvail"></div><h2>Alerts</h2><div id="alerts"></div></div></div>
+</section>
+<section class="page" id="departments"><h1 class="ptitle">Department Management</h1><div class="card"><input id="dp-q" placeholder="Filter departments…" aria-label="Filter departments"></div><div class="cards3" id="deptGrid"></div></section>
+<section class="page" id="tracking"><h1 class="ptitle">Patient Tracking Portal</h1><div class="grid2">
+  <div class="card"><h2>Track my token</h2><div class="inline"><input id="tk-in" placeholder="Token e.g. T-112" aria-label="Token"><button class="btn primary" id="tk-go">Track</button><button class="btn ghost" id="tk-ref">Refresh</button></div><div id="tk-out" class="note">Enter your token to see your position and wait.</div></div>
+  <div class="card"><h2>Now serving</h2><div id="tk-now"></div><h2>While you wait</h2><ul><li>Stay near your department.</li><li>Keep your token handy.</li><li>Tell staff if symptoms get worse.</li></ul><p class="note warn">Demo mode: only token-level information is shown.</p></div></div></section>
+<section class="page" id="notifications"><h1 class="ptitle">Notification Center</h1><p class="note warn">Simulated in-browser alerts. No real SMS or WhatsApp is sent.</p>
+  <div class="card"><div class="filters"><select id="n-f" aria-label="Type"><option value="">All types</option><option>registration</option><option>queue</option><option>call</option><option>doctor</option><option>congestion</option><option>completed</option></select><button class="btn ghost" id="n-all">Mark all read</button></div><ul id="nList" class="feed"></ul></div></section>
+<section class="page" id="room"><div class="room" id="roomView"><button class="btn ghost" id="roomFs">⛶ Presentation mode</button><div class="rclock" id="rclock"></div><h1>NOW CALLING</h1><div class="rbig" id="rNow">—</div><div class="rsub" id="rDoc"></div><h2>Next tokens</h2><div class="rnext" id="rNext"></div><h2>Departments</h2><div class="rdepts" id="rDepts"></div><p class="rhelp">Please keep your token ready. Demo data only. No patient names are displayed.</p></div></section>
+<section class="page" id="settings"><h1 class="ptitle">Reports &amp; Settings</h1><div class="grid2">
+  <div class="card"><h2>Department report</h2><div class="tablewrap"><table><thead><tr><th>Department</th><th>Waiting</th><th>Completed</th><th>Avg actual wait</th></tr></thead><tbody id="repBody"></tbody></table></div><div class="inline" style="margin-top:12px"><button class="btn primary" id="csvBtn2">Export CSV</button><button class="btn ghost" id="printBtn">Print report</button></div></div>
+  <div class="card"><h2>Settings</h2><label class="pill"><input type="checkbox" id="s-toast" checked> Show toast notifications</label><label class="pill"><input type="checkbox" id="s-sim"> Simulate a new arrival every 20 s</label><label for="s-theme">Theme</label><select id="s-theme"><option value="light">Light</option><option value="dark">Dark</option></select><p></p><button class="btn danger" id="resetBtn2">Reset demo data</button><p class="note warn">Client-only demo: no real authentication, encryption or secure record storage. Production needs a secure backend, access control, audit logs and privacy safeguards.</p></div></div></section>
+
+<!-- PAGE 7: ABOUT -->
+<section class="page" id="about">
+  <h1 class="ptitle">About &amp; Contact</h1>
+  <div class="grid2">
+    <div class="card"><h2>The problem</h2><p>Long, unpredictable waits frustrate patients, crowd waiting rooms, and delay urgent care.</p>
+      <h2>The solution</h2><p>A queue system that ranks patients by urgency and arrival, estimates waits, and lets staff balance doctor workloads.</p>
+      <h2>Key benefits</h2><ul><li>Transparent waiting times</li><li>Urgent cases seen sooner</li><li>Better doctor utilisation</li><li>Data for planning staff</li></ul>
+      <h2>Future improvements</h2><ul><li>Secure backend, authentication &amp; role-based access</li><li>Privacy protection and audit logs</li><li>SMS/WhatsApp notifications</li><li>Integration with clinically validated triage tools</li></ul>
+      <p class="note warn">This is a client-side simulation. Production use requires secure backend services, access controls, privacy compliance and professional triage integration. No real AI model or hospital is connected.</p></div>
+    <div>
+      <div class="card"><h2>Contact (demo details)</h2><p><i class="fa-solid fa-location-dot"></i> 123 Demo Street, Sample City</p><p><i class="fa-solid fa-phone"></i> +00 000 000 0000</p><p><i class="fa-solid fa-envelope"></i> demo@example.com</p></div>
+      <form class="card" id="contactForm" novalidate><h2>Send a message</h2>
+        <label for="c-name">Name *</label><input id="c-name"><small class="err" id="ce-name"></small>
+        <label for="c-email">Email *</label><input id="c-email" type="email"><small class="err" id="ce-email"></small>
+        <label for="c-msg">Message *</label><textarea id="c-msg" rows="3"></textarea><small class="err" id="ce-msg"></small>
+        <button class="btn primary" type="submit">Send</button></form>
+      <button class="btn danger" id="resetBtn"><i class="fa-solid fa-rotate-left"></i> Reset demo data</button>
+    </div>
+  </div>
+</section>
+</main>
+<footer>© MediQueue AI · College project demo · All patients and doctors are fictional</footer>
+<div id="toasts" aria-live="polite"></div>
+<div id="dlg" class="loader" hidden role="dialog" aria-modal="true"><div class="card"><p id="dlgMsg"></p><div class="inline"><button class="btn danger" id="dlgOk">Confirm</button><button class="btn ghost" id="dlgNo">Cancel</button></div></div></div>
+<div id="loader" class="loader" hidden><span></span></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+/* ===== MediQueue AI – client-side simulation (all data fictional) ===== */
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KEY = 'mediqueue_demo_v2';
+const DUR = {'General Medicine':10, Cardiology:15, Pediatrics:10, Orthopedics:12, Dermatology:8, Ophthalmology:10, ENT:9, 'Dental Care':12}; // avg minutes
+const DEPTS = Object.keys(DUR), W = {routine:1, urgent:2, emergency:3};
+const now = () => Date.now(), mins = p => Math.max(0, Math.round((now() - p.arrival) / 6e4));
+const dk = t => { const d = new Date(t); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const fmt = t => new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+let S = load(), charts = {};
+
+/* ---------- Data ---------- */
+function seed() {
+  const doctors = [[1,'Dr. Asha Rao','Family Physician','General Medicine',1],[2,'Dr. Vikram Shah','Internist','General Medicine',0],
+    [3,'Dr. Meera Iyer','Cardiologist','Cardiology',1],[4,'Dr. Rohan Das','Pediatrician','Pediatrics',1],
+    [5,'Dr. Sana Khan','Orthopedic Surgeon','Orthopedics',1],[6,'Dr. Kiran Nair','Dermatologist','Dermatology',1],[7,'Dr. Lena Fernandes','Ophthalmologist','Ophthalmology',1],[8,'Dr. Omar Siddiqui','ENT Specialist','ENT',1],[9,'Dr. Priya Bhat','Dentist','Dental Care',1]]
+    .map(([id,name,spec,dept,a]) => ({id,name,spec,dept,available:!!a}));
+  const names = ['Aarav Mehta','Diya Patel','Rahul Verma','Ananya Singh','Kabir Joshi','Isha Reddy','Neha Kulkarni','Arjun Nair','Priya Menon','Sameer Khan','Tara Bose','Dev Malhotra'];
+  const mk = (i, dept, priority, ago, status, doctor) => ({token:'T-' + (100 + i), name:names[i % 12], age:20 + (i * 7) % 55,
+    gender:i % 2 ? 'Female' : 'Male', phone:'98765' + String(10000 + i * 37).slice(-5), dept, pref:'Any', symptoms:'Demo symptoms (fictional)',
+    priority, arrival:now() - ago * 6e4, status, doctor, waited:status === 'Waiting' ? null : 8 + i % 9});
+  const patients = [mk(0,'Orthopedics','routine',45,'Completed',5), mk(1,'General Medicine','routine',50,'Completed',1),
+    mk(2,'Cardiology','urgent',40,'In Consultation',3), mk(3,'General Medicine','routine',35,'Called',1),
+    mk(4,'Pediatrics','routine',30,'In Consultation',4), mk(5,'General Medicine','routine',28,'Waiting',null),
+    mk(6,'General Medicine','emergency',5,'Waiting',null), mk(7,'Cardiology','routine',22,'Waiting',null),
+    mk(8,'Orthopedics','urgent',20,'Waiting',null), mk(9,'Dermatology','routine',15,'Waiting',null),
+    mk(10,'Pediatrics','urgent',12,'Waiting',null), mk(11,'General Medicine','routine',8,'Waiting',null), mk(12,'ENT','routine',18,'Waiting',null), mk(13,'Ophthalmology','routine',10,'Waiting',null), mk(14,'Dental Care','urgent',6,'Waiting',null)];
+  let h = 0; // historical completed visits for the trend chart
+  for (let d = 1; d <= 6; d++) for (let k = 0; k < 3 + (d * 2) % 4; k++, h++)
+    patients.push({token:'H-' + h, name:names[h % 12], age:25 + h % 40, gender:h % 2 ? 'Male' : 'Female', phone:'9000000000', dept:DEPTS[h % DEPTS.length], pref:'Any',
+      symptoms:'Past visit (fictional)', priority:['routine','routine','urgent'][h % 3], arrival:now() - d * 864e5 + k * 36e5, status:'Completed', doctor:1 + h % 9, waited:6 + h % 20});
+  return {doctors, patients, next:115, set:{}, notes:[{id:1, type:'call', msg:'T-103 called to Dr. Asha Rao', t:now() - 3e5, read:false}, {id:2, type:'doctor', msg:'Dr. Vikram Shah is off duty', t:now() - 9e5, read:false}]};
+}
+function load() { try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.patients) { s.notes = s.notes || []; s.set = s.set || {}; return s; } } catch (e) {} return seed(); }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('Could not save data', 'error'); } }
+
+/* ---------- Simulated AI: priority + wait prediction ---------- */
+const score = p => W[p.priority] * 100 + Math.min(mins(p), 90);           // urgency + arrival-time ageing
+const waiting = dept => S.patients.filter(p => p.status === 'Waiting' && (!dept || p.dept === dept)).sort((a, b) => score(b) - score(a) || a.arrival - b.arrival);
+const busy = d => S.patients.some(p => p.doctor === d.id && ['Called','In Consultation'].includes(p.status));
+const onDuty = dept => S.doctors.filter(d => d.dept === dept && d.available);
+function estimate(dept, ahead, extra = 0) {
+  const docs = onDuty(dept), n = docs.length + extra, dur = DUR[dept];
+  if (!n) return ahead * dur + 30;
+  const free = docs.filter(d => !busy(d)).length + extra;
+  return ahead < free ? 0 : Math.round((ahead - free + 1) / n * dur + (free ? 0 : dur / 2));
+}
+const waitOf = p => estimate(p.dept, waiting(p.dept).findIndex(x => x.token === p.token));
+const today = () => S.patients.filter(p => dk(p.arrival) === dk(now()));
+const avgWait = list => { const c = list.filter(p => p.waited != null); return c.length ? Math.round(c.reduce((a, p) => a + p.waited, 0) / c.length) : 0; };
+const badge = (c, t) => `<span class="b ${c}">${esc(t || c)}</span>`;
+const docName = id => (S.doctors.find(d => d.id === id) || {}).name || '—';
+
+/* ---------- UI helpers ---------- */
+function toast(msg, type = 'info') { if (type !== 'error' && S.set.toast === false) return; const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg; $('#toasts').appendChild(t); setTimeout(() => t.remove(), 3500); }
+function loading(fn) { $('#loader').hidden = false; setTimeout(() => { fn(); $('#loader').hidden = true; }, 450); }
+function fillSelect(el, opts, first) { const v = el.value; el.innerHTML = (first ? `<option value="">${first}</option>` : '') + opts.map(o => `<option>${esc(o)}</option>`).join(''); if (opts.includes(v)) el.value = v; }
+
+/* ---------- Navigation ---------- */
+function route(id) {
+  id = id || (location.hash || '#home').slice(1); const page = $('#' + id) && $('#' + id).classList.contains('page') ? id : 'home';
+  $$('.page').forEach(p => p.classList.toggle('show', p.id === page));
+  $$('nav a').forEach(a => a.classList.toggle('active', a.dataset.page === page));
+  $('#nav').classList.remove('open'); $('#burger').setAttribute('aria-expanded', 'false'); window.scrollTo(0, 0);
+  if (page === 'analytics') renderAnalytics(); if (page === 'dashboard' || page === 'room') renderMore();
+}
+window.addEventListener('hashchange', () => route());
+document.addEventListener('click', e => { const a = e.target.closest('a[href^="#"]'); if (a) { e.preventDefault(); route(a.getAttribute('href').slice(1)); } });
+$('#burger').onclick = () => { const o = $('#nav').classList.toggle('open'); $('#burger').setAttribute('aria-expanded', o); };
+
+/* ---------- Renderers ---------- */
+function renderHome() {
+  const t = today(), w = waiting();
+  const cards = [['fa-users','Total patients today',t.length],['fa-hourglass-half','Waiting patients',w.length],
+    ['fa-user-doctor','Available doctors',S.doctors.filter(d => d.available).length + ' / ' + S.doctors.length],
+    ['fa-clock','Avg waiting time', (w.length ? Math.round(w.reduce((a, p) => a + waitOf(p), 0) / w.length) : avgWait(t)) + ' min']];
+  $('#statCards').innerHTML = cards.map(c => `<div class="card stat"><div class="ic"><i class="fa-solid ${c[0]}"></i></div><div><b>${c[2]}</b><span>${c[1]}</span></div></div>`).join('');
+  $('#previewBody').innerHTML = w.slice(0, 5).map(p => `<tr class="${p.priority === 'emergency' ? 'emg' : ''}"><td><b>${p.token}</b></td><td>${esc(p.name)}</td><td>${p.dept}</td><td>${badge(p.priority)}</td><td>${waitOf(p)} min</td></tr>`).join('') || '<tr><td colspan="5" class="empty">No patients waiting 🎉</td></tr>';
+  $('#services').innerHTML = DEPTS.map(d => `<div class="svc"><b>${d}</b>${onDuty(d).length} doctor(s) · ${waiting(d).length} waiting</div>`).join('');
+}
+function renderQueue() {
+  const q = $('#f-search').value.trim().toLowerCase(), fd = $('#f-dept').value, fp = $('#f-prio').value, fs = $('#f-status').value;
+  const order = {Waiting:0, Called:1, 'In Consultation':2, Completed:3};
+  const wl = waiting(), list = today().filter(p => (!q || p.token.toLowerCase().includes(q) || p.name.toLowerCase().includes(q)) && (!fd || p.dept === fd) && (!fp || p.priority === fp) && (!fs || p.status === fs))
+    .sort((a, b) => order[a.status] - order[b.status] || (a.status === 'Waiting' ? wl.indexOf(a) - wl.indexOf(b) : a.arrival - b.arrival));
+  $('#queueBody').innerHTML = list.map(p => {
+    const idx = waiting(p.dept).findIndex(x => x.token === p.token), isW = p.status === 'Waiting';
+    const act = (p.status === 'Waiting' ? `<button class="mini" data-act="call" data-t="${p.token}">Call</button>` : '') +
+      (p.status === 'Called' ? `<button class="mini" data-act="start" data-t="${p.token}">Start</button>` : '') +
+      (p.status === 'In Consultation' ? `<button class="mini" data-act="done" data-t="${p.token}">Complete</button>` : '') +
+      `<button class="mini x" data-act="remove" data-t="${p.token}" aria-label="Remove ${p.token}">Remove</button>`;
+    return `<tr class="${p.priority === 'emergency' && p.status !== 'Completed' ? 'emg' : ''}"><td><b>${p.token}</b></td><td>${esc(p.name)}</td><td>${p.dept}</td><td>${badge(p.priority)}</td><td>${fmt(p.arrival)}</td><td>${isW ? idx + 1 : '—'}</td><td>${isW ? estimate(p.dept, idx) + ' min' : '—'}</td><td>${badge(p.status, p.status)}</td><td>${act}</td></tr>`;
+  }).join('') || '<tr><td colspan="9" class="empty"><i class="fa-regular fa-folder-open"></i> No patients match your filters.</td></tr>';
+}
+function renderDoctors() {
+  $('#docGrid').innerHTML = S.doctors.map(d => {
+    const cur = S.patients.find(p => p.doctor === d.id && ['Called','In Consultation'].includes(p.status));
+    const assigned = S.patients.filter(p => p.doctor === d.id && dk(p.arrival) === dk(now())).length;
+    const opts = waiting(d.dept).map(p => `<option value="${p.token}">${p.token} – ${esc(p.name)} (${p.priority})</option>`).join('');
+    const st = !d.available ? ['Off duty','Completed'] : cur ? ['Busy','Called'] : ['Available','routine'];
+    return `<div class="card doc"><h3><i class="fa-solid fa-user-doctor"></i> ${esc(d.name)}</h3><div class="spec">${d.spec} · ${d.dept}</div>
+      <p>${badge(st[1], st[0])}</p><p><b>Current patient:</b> ${cur ? `${cur.token} ${esc(cur.name)} (${cur.status})` : 'None'}</p><p><b>Patients assigned today:</b> ${assigned}</p><div class="meter" title="Workload"><i style="width:${Math.min(100, assigned * 14)}%"></i></div>
+      <select id="sel-${d.id}" aria-label="Patient to assign"><option value="">Select waiting patient…</option>${opts}</select>
+      <div class="acts"><button class="mini" data-act="assign" data-d="${d.id}">Assign</button>
+      ${cur && cur.status === 'Called' ? `<button class="mini" data-act="start" data-t="${cur.token}">Start consultation</button>` : ''}
+      ${cur && cur.status === 'In Consultation' ? `<button class="mini" data-act="done" data-t="${cur.token}">Complete</button>` : ''}
+      <button class="mini x" data-act="avail" data-d="${d.id}">${d.available ? 'Set off duty' : 'Set available'}</button></div></div>`;
+  }).join('');
+}
+function renderPredict() {
+  $('#predBody').innerHTML = waiting().map(p => { const a = waiting(p.dept).findIndex(x => x.token === p.token);
+    return `<tr><td><b>${p.token}</b></td><td>${esc(p.name)}</td><td>${p.dept}</td><td>${badge(p.priority)}</td><td>${a}</td><td>${onDuty(p.dept).length}</td><td>${DUR[p.dept]} min</td><td><b>${estimate(p.dept, a)} min</b></td></tr>`; }).join('') || '<tr><td colspan="8" class="empty">No patients waiting.</td></tr>';
+}
+function filteredByDate() { const d = $('#a-date').value; return d ? S.patients.filter(p => dk(p.arrival) === d) : S.patients; }
+function renderAnalytics() {
+  const L = filteredByDate(), comp = L.filter(p => p.status === 'Completed').length, wt = L.filter(p => p.status === 'Waiting').length;
+  const c = [['fa-users','Total registered',L.length],['fa-clock','Avg waiting time',avgWait(L) + ' min'],['fa-circle-check','Completed consultations',comp],['fa-hourglass-half','Currently waiting',wt]];
+  $('#anCards').innerHTML = c.map(x => `<div class="card stat"><div class="ic"><i class="fa-solid ${x[0]}"></i></div><div><b>${x[2]}</b><span>${x[1]}</span></div></div>`).join('');
+  if (typeof Chart === 'undefined') return;
+  const days = [...Array(7)].map((_, i) => dk(now() - (6 - i) * 864e5));
+  const data = {dept:[DEPTS, DEPTS.map(d => L.filter(p => p.dept === d).length)], trend:[days.map(d => d.slice(5)), days.map(d => S.patients.filter(p => dk(p.arrival) === d).length)]};
+  const mkc = (id, type, cfg, color) => { if (charts[id]) { charts[id].data.labels = cfg[0]; charts[id].data.datasets[0].data = cfg[1]; charts[id].update(); return; }
+    charts[id] = new Chart($('#' + id), {type, data:{labels:cfg[0], datasets:[{label:'Patients', data:cfg[1], backgroundColor:color, borderColor:'#0d9488', tension:.3, fill:type === 'line'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}}); };
+  mkc('chDept', 'bar', data.dept, ['#0b2a4a','#0d9488','#38bdf8','#2563eb','#14b8a6','#7dd3fc','#1e40af','#5eead4']); mkc('chTrend', 'line', data.trend, 'rgba(13,148,136,.2)');
+}
+function renderAll() {
+  renderHome(); renderQueue(); renderDoctors(); renderPredict(); renderMore();
+  if ($('#analytics').classList.contains('show')) renderAnalytics();
+  const pick = $('#r-doc'), d = $('#r-dept').value; fillSelect(pick, S.doctors.filter(x => x.dept === d).map(x => x.name), 'Any available doctor');
+}
+
+/* ---------- Queue actions ---------- */
+function ask(msg) { return new Promise(res => { const d = $('#dlg'); $('#dlgMsg').textContent = msg; d.hidden = false; const done = v => { d.hidden = true; res(v); };
+  $('#dlgOk').onclick = () => done(true); $('#dlgNo').onclick = () => done(false); $('#dlgOk').focus(); }); }
+const find = t => S.patients.find(p => p.token === t);
+function call(p) {
+  const docs = onDuty(p.dept).filter(d => !busy(d)), pref = docs.find(d => d.name === p.pref), d = pref || docs[0];
+  if (!d) return toast(`No free doctor in ${p.dept}`, 'error'), false;
+  p.doctor = d.id; p.status = 'Called'; p.waited = mins(p); toast(`${p.token} ${p.name} → ${d.name}`, 'ok'); note('call', `${p.token} called to ${d.name}`); return true;
+}
+function act(a, t, d) {
+  const p = t && find(t), doc = d && S.doctors.find(x => x.id == d);
+  if (a === 'call') call(p);
+  else if (a === 'start') { p.status = 'In Consultation'; toast('Consultation started', 'ok'); note('queue', `${p.token} consultation started`); }
+  else if (a === 'done') { p.status = 'Completed'; toast('Consultation completed', 'ok'); note('completed', `${p.token} consultation completed`); }
+  else if (a === 'remove') { ask(`Remove ${p.token} (${p.name})? Use only for test entries.`).then(ok => { if (!ok) return; S.patients = S.patients.filter(x => x !== p); toast('Entry removed'); save(); renderAll(); }); return; }
+  else if (a === 'avail') { doc.available = !doc.available; toast(`${doc.name} is now ${doc.available ? 'available' : 'off duty'}`); note('doctor', `${doc.name} is now ${doc.available ? 'available' : 'off duty'}`); }
+  else if (a === 'assign') {
+    const tok = $('#sel-' + d).value, pt = find(tok);
+    if (!pt) return toast('Select a waiting patient first', 'error');
+    if (!doc.available) return toast('Doctor is off duty', 'error');
+    if (busy(doc)) return toast('Doctor is busy with another patient', 'error');
+    pt.doctor = doc.id; pt.status = 'Called'; pt.waited = mins(pt); toast(`${pt.token} assigned to ${doc.name}`, 'ok'); note('call', `${pt.token} assigned to ${doc.name}`);
+  }
+  save(); renderAll();
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) act(b.dataset.act, b.dataset.t, b.dataset.d); });
+$('#callNext').onclick = () => {
+  const next = waiting().find(p => onDuty(p.dept).some(d => !busy(d)));
+  if (!next) return toast(waiting().length ? 'No free doctors for waiting patients' : 'No patients waiting', 'error');
+  call(next); save(); renderAll();
+};
+['#f-search', '#f-dept', '#f-prio', '#f-status'].forEach(s => $(s).addEventListener('input', renderQueue));
+
+/* ---------- Registration ---------- */
+const setErr = (id, m) => { $('#e-' + id).textContent = m || ''; const f = $('#r-' + id); if (f) f.classList.toggle('bad', !!m); return !m; };
+$('#r-dept').addEventListener('change', renderAll);
+$('#regForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = {name:$('#r-name').value.trim(), age:+$('#r-age').value, gender:$('#r-gender').value, phone:$('#r-phone').value.trim(), dept:$('#r-dept').value, sym:$('#r-sym').value.trim()};
+  const ok = [setErr('name', v.name.length < 3 ? 'Enter a full name (min 3 characters)' : /[^a-zA-Z .'-]/.test(v.name) ? 'Name has invalid characters' : ''),
+    setErr('age', !$('#r-age').value || v.age < 0 || v.age > 120 ? 'Enter a valid age (0–120)' : ''), setErr('gender', v.gender ? '' : 'Select a gender'),
+    setErr('phone', /^\d{10}$/.test(v.phone) ? '' : 'Phone must be exactly 10 digits'), setErr('dept', v.dept ? '' : 'Select a department'),
+    setErr('sym', v.sym.length < 5 ? 'Describe symptoms (min 5 characters)' : '')].every(Boolean);
+  if (!ok) return toast('Please fix the highlighted fields', 'error');
+  loading(() => {
+    const p = {token:'T-' + S.next++, name:v.name, age:v.age, gender:v.gender, phone:v.phone, dept:v.dept, pref:$('#r-doc').value || 'Any', symptoms:v.sym,
+      priority:document.querySelector('[name=prio]:checked').value, arrival:now(), status:'Waiting', doctor:null, waited:null};
+    S.patients.push(p); note('registration', `${p.token} registered for ${p.dept}`); if (waiting(p.dept).length >= 4) note('congestion', `${p.dept} congestion: ${waiting(p.dept).length} waiting`); save(); renderAll();
+    const r = $('#regResult'); r.hidden = false; r.className = 'card success';
+    r.innerHTML = `<h2><i class="fa-solid fa-circle-check"></i> Registration successful</h2><div class="tok">${p.token}</div><p>${esc(p.name)} · ${p.dept} · ${badge(p.priority)}</p>
+      <p>Queue position: <b>${waiting(p.dept).indexOf(p) + 1}</b> · Estimated wait: <b>${waitOf(p)} min</b> <small>(simulated)</small></p><button class="btn ghost sm" id="viewMine">View my queue status</button> <button class="btn ghost sm" id="dlTok">Download summary</button>`;
+    $('#viewMine').onclick = () => { $('#statusToken').value = p.token; showStatus(); };
+    $('#dlTok').onclick = () => saveFile(`token-${p.token}.txt`, `MediQueue AI (DEMO)\nToken: ${p.token}\nName: ${p.name}\nDepartment: ${p.dept}\nPriority: ${p.priority}\nEst. wait: ${waitOf(p)} min (simulated)\nFictional demo data only.`);
+    $('#regForm').reset(); renderAll(); toast('Patient registered: ' + p.token, 'ok');
+  });
+});
+function showStatus() {
+  const p = find($('#statusToken').value.trim().toUpperCase()), o = $('#statusOut');
+  if (!p) return o.innerHTML = '<span class="err">Token not found.</span>', toast('Token not found', 'error');
+  o.innerHTML = `<b>${p.token}</b> · ${esc(p.name)} · ${p.dept} · ${badge(p.status, p.status)}<br>` + (p.status === 'Waiting' ? `Position ${waiting(p.dept).indexOf(p) + 1} · about <b>${waitOf(p)} min</b> (simulated)` : p.status === 'Completed' ? 'Consultation finished.' : `Please go to ${docName(p.doctor)}.`);
+}
+$('#statusBtn').onclick = showStatus;
+
+/* ---------- Prediction ---------- */
+$('#predBtn').onclick = () => {
+  const d = $('#p-dept').value, pr = $('#p-prio').value, ahead = waiting(d).filter(p => score(p) >= W[pr] * 100).length, w = estimate(d, ahead);
+  $('#predOut').innerHTML = `${w} min<small>${ahead} patient(s) ahead · ${onDuty(d).length} doctor(s) on duty · ${DUR[d]} min avg · simulated estimate</small>`;
+};
+
+/* ---------- Analytics: date filter + CSV ---------- */
+$('#a-date').onchange = renderAnalytics;
+$('#a-clear').onclick = () => { $('#a-date').value = ''; renderAnalytics(); };
+$('#csvBtn').onclick = () => {
+  const L = filteredByDate(); if (!L.length) return toast('No data to export', 'error');
+  const q = x => '"' + String(x).replace(/"/g, '""') + '"';
+  const rows = [['Token','Name','Age','Gender','Department','Priority','Status','Doctor','Arrival','Waited (min)']].concat(L.map(p => [p.token, p.name, p.age, p.gender, p.dept, p.priority, p.status, docName(p.doctor), new Date(p.arrival).toLocaleString(), p.waited ?? '']));
+  saveFile('queue-report.csv', rows.map(r => r.map(q).join(',')).join('\n'));
+};
+
+/* ---------- Contact form & reset ---------- */
+$('#contactForm').addEventListener('submit', e => {
+  e.preventDefault(); const n = $('#c-name').value.trim(), m = $('#c-email').value.trim(), g = $('#c-msg').value.trim();
+  const s = (id, msg) => { $('#ce-' + id).textContent = msg; $('#c-' + id).classList.toggle('bad', !!msg); return !msg; };
+  if ([s('name', n.length < 2 ? 'Enter your name' : ''), s('email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m) ? '' : 'Enter a valid email'), s('msg', g.length < 10 ? 'Message needs at least 10 characters' : '')].every(Boolean)) { toast('Message sent (demo – nothing is transmitted)', 'ok'); e.target.reset(); }
+  else toast('Please fix the form errors', 'error');
+});
+$('#resetBtn').onclick = () => ask('Reset all demo data to the original sample data?').then(ok => { if (!ok) return; try { localStorage.removeItem(KEY); } catch (e) {} S = seed(); save(); renderAll(); toast('Demo data reset', 'ok'); });
+
+/* ---------- v2: notifications, dashboard, departments, tracking, waiting room, settings ---------- */
+const ICON = {registration:'📝', queue:'🔄', call:'📢', doctor:'🩺', congestion:'⚠️', completed:'✅'}, KP = [];
+const DEPT_ICON = {'General Medicine':'🩺', Cardiology:'❤️', Pediatrics:'🧸', Orthopedics:'🦴', Dermatology:'🧴', Ophthalmology:'👁️', ENT:'👂', 'Dental Care':'🦷'};
+const PAL = ['#0b2a4a','#0d9488','#38bdf8','#2563eb','#14b8a6','#7dd3fc','#1e40af','#5eead4'];
+function note(type, msg) { S.notes.unshift({id:now() + Math.random(), type, msg, t:now(), read:false}); S.notes = S.notes.slice(0, 60); }
+const ago = t => { const m = Math.round((now() - t) / 6e4); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; };
+function chart(id, type, labels, vals, color) {
+  if (typeof Chart === 'undefined') return;
+  if (charts[id]) { charts[id].data.labels = labels; charts[id].data.datasets[0].data = vals; charts[id].update(); return; }
+  charts[id] = new Chart($('#' + id), {type, data:{labels, datasets:[{label:'Patients', data:vals, backgroundColor:color, borderColor:'#0d9488', borderWidth:type === 'doughnut' ? 0 : 2}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:type === 'doughnut'}}, scales:type === 'doughnut' ? {} : {y:{beginAtZero:true, ticks:{precision:0}}}}});
+}
+function countUp(el) { const to = +el.dataset.v, t0 = performance.now(); (function f(t) { const k = Math.min(1, (t - t0) / 700); el.textContent = Math.round(to * k); if (k < 1) requestAnimationFrame(f); })(t0); }
+async function saveFile(name, data) {
+  if (typeof claude === 'undefined' || !claude.use) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data])); a.download = name; a.click(); return toast('Saved ' + name, 'ok'); }
+  try { const d = await claude.use('downloads'); if (!d) return toast('Downloads are not available in this view', 'error'); await d.save({filename:name, data}); toast('Saved ' + name, 'ok'); }
+  catch (e) { if (!e || e.code !== 'declined') toast('Download failed', 'error'); }
+}
+function renderMore() {
+  const w = waiting(), k = [['Registered', S.patients.length], ['Waiting', w.length], ['In consultation', S.patients.filter(p => p.status === 'In Consultation').length], ['Completed', S.patients.filter(p => p.status === 'Completed').length],
+    ['Doctors available', S.doctors.filter(d => d.available).length], ['Avg wait (min)', avgWait(S.patients)], ['Emergencies waiting', w.filter(p => p.priority === 'emergency').length]];
+  $('#kpis').innerHTML = k.map(x => `<div class="card stat"><div><b data-v="${x[1]}">${x[1]}</b><span>${x[0]}</span></div></div>`).join('');
+  $$('#kpis b').forEach((b, i) => { if (KP[i] !== k[i][1]) countUp(b); KP[i] = k[i][1]; });
+  $('#feed').innerHTML = S.notes.slice(0, 6).map(n => `<li><span>${ICON[n.type]} ${esc(n.msg)}</span><small>${ago(n.t)}</small></li>`).join('') || '<li class="empty">No activity yet</li>';
+  $('#docAvail').innerHTML = S.doctors.map(d => `<div class="bar"><span>${esc(d.name)}</span>${!d.available ? badge('Completed', 'Off duty') : busy(d) ? badge('Called', 'Busy') : badge('routine', 'Available')}</div>`).join('');
+  $('#alerts').innerHTML = w.filter(p => p.priority === 'emergency').map(p => `<div class="warn">🚨 Emergency waiting: ${p.token} (${p.dept})</div>`).join('') + DEPTS.filter(d => waiting(d).length >= 4).map(d => `<div class="warn">⚠️ Congestion in ${d}</div>`).join('') || '<div class="note">No alerts.</div>';
+  if ($('#dashboard').classList.contains('show')) { const hrs = [...Array(24)].map((_, h) => S.patients.filter(p => new Date(p.arrival).getHours() === h).length);
+    chart('chHour', 'bar', hrs.map((_, h) => h + ':00'), hrs, '#0d9488'); chart('chPie', 'doughnut', DEPTS, DEPTS.map(d => S.patients.filter(p => p.dept === d).length), PAL); }
+  const cl = S.patients.filter(p => ['Called','In Consultation'].includes(p.status)).map(p => p.token), rc = S.patients.filter(p => p.status === 'Completed' && dk(p.arrival) === dk(now())).slice(-3).map(p => p.token);
+  $('#board').innerHTML = `<div><small>NOW SERVING</small><b>${cl.join(' · ') || '—'}</b></div><div><small>NEXT</small><b>${w.slice(0, 3).map(p => p.token).join(' · ') || '—'}</b></div><div><small>RECENTLY COMPLETED</small><b>${rc.join(' · ') || '—'}</b></div>`;
+  const q = $('#dp-q').value.toLowerCase();
+  $('#deptGrid').innerHTML = DEPTS.filter(d => d.toLowerCase().includes(q)).map(d => { const n = waiting(d).length, docs = onDuty(d), lvl = n >= 4 ? ['High','emergency'] : n >= 2 ? ['Moderate','urgent'] : ['Low','routine'];
+    return `<div class="card doc"><h3>${DEPT_ICON[d]} ${d}</h3><p>${badge(lvl[1], lvl[0] + ' load')}</p><p>Doctors on duty: <b>${docs.length}</b> / ${S.doctors.filter(x => x.dept === d).length}</p><p>Waiting: <b>${n}</b> · Est. delay: <b>${estimate(d, n)} min</b></p><p>Capacity: ~${Math.round(docs.length * 60 / DUR[d])} patients/hour</p><div class="meter"><i style="width:${Math.min(100, n * 25)}%"></i></div><button class="btn ghost sm" data-go="${d}">Open department queue</button></div>`; }).join('') || '<p class="empty">No departments match.</p>';
+  $('#tk-now').innerHTML = DEPTS.map(d => { const c = S.patients.find(p => p.dept === d && ['Called','In Consultation'].includes(p.status)); return `<div class="bar"><span>${d}</span><b>${c ? c.token : '—'}</b></div>`; }).join('');
+  const cur = S.patients.filter(p => p.status === 'Called').sort((a, b) => b.arrival - a.arrival)[0] || S.patients.find(p => p.status === 'In Consultation');
+  $('#rNow').textContent = cur ? cur.token : '—'; $('#rDoc').textContent = cur ? `${cur.dept} · ${docName(cur.doctor)}` : 'Waiting for next call';
+  $('#rNext').innerHTML = w.slice(0, 5).map((p, i) => `<span class="rtok ${i ? '' : 'first'}">${p.token}</span>`).join('') || '<span>Queue is empty</span>';
+  $('#rDepts').innerHTML = DEPTS.map(d => `<div class="svc"><b>${d}</b>${waiting(d).length} waiting · ${onDuty(d).length} doctor(s)</div>`).join('');
+  const f = $('#n-f').value, un = S.notes.filter(n => !n.read).length; $('#bellN').textContent = un; $('#bellN').hidden = !un;
+  $('#nList').innerHTML = S.notes.filter(n => !f || n.type === f).map(n => `<li class="${n.read ? '' : 'unread'}"><span>${ICON[n.type]} ${esc(n.msg)} <small>${ago(n.t)}</small></span><span><button class="mini" data-nr="${n.id}">${n.read ? 'Read' : 'Mark read'}</button><button class="mini x" data-nd="${n.id}" aria-label="Dismiss">✕</button></span></li>`).join('') || '<li class="empty">No notifications</li>';
+  const wd = $('#w-dept').value || DEPTS[0], ex = +$('#w-extra').value, nw = waiting(wd).length;
+  $('#w-val').textContent = ex; $('#w-out').innerHTML = `${estimate(wd, nw, ex)} min<small>wait for the last patient with ${ex} extra doctor(s), versus ${estimate(wd, nw)} min now (${nw} waiting) · simulated</small>`;
+  $('#cmpBody').innerHTML = DEPTS.map(d => { const n = waiting(d).length, hh = S.patients.filter(p => p.dept === d && p.waited != null);
+    return `<tr><td>${d}</td><td>${n >= 4 ? 'High' : n >= 2 ? 'Moderate' : 'Low'}</td><td>${estimate(d, Math.max(0, n - 1))} min</td><td>${hh.length ? Math.round(hh.reduce((a, p) => a + p.waited, 0) / hh.length) + ' min' : '—'}</td></tr>`; }).join('');
+  $('#repBody').innerHTML = DEPTS.map(d => { const L = S.patients.filter(p => p.dept === d); return `<tr><td>${d}</td><td>${L.filter(p => p.status === 'Waiting').length}</td><td>${L.filter(p => p.status === 'Completed').length}</td><td>${avgWait(L)} min</td></tr>`; }).join('');
+}
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'), r = e.target.closest('[data-nr]'), x = e.target.closest('[data-nd]');
+  if (g) { $('#f-dept').value = g.dataset.go; route('queue'); renderQueue(); }
+  if (r) { const n = S.notes.find(n => String(n.id) === r.dataset.nr); if (n) n.read = !n.read; save(); renderMore(); }
+  if (x) { S.notes = S.notes.filter(n => String(n.id) !== x.dataset.nd); save(); renderMore(); }
+});
+['#dp-q', '#n-f', '#w-dept', '#w-extra'].forEach(s => $(s).addEventListener('input', renderMore));
+$('#n-all').onclick = () => { S.notes.forEach(n => n.read = true); save(); renderMore(); };
+$('#bell').onclick = () => route('notifications');
+$('#qaCall').onclick = () => $('#callNext').click();
+$('#gsearch').addEventListener('keydown', e => { if (e.key === 'Enter') { $('#f-search').value = e.target.value; route('queue'); renderQueue(); } });
+function track() {
+  const p = find($('#tk-in').value.trim().toUpperCase()), o = $('#tk-out');
+  if (!p) return void (o.innerHTML = '<span class="err">Token not found.</span>');
+  o.innerHTML = `<div class="bignum">${p.token}<small>${p.dept}</small></div>${badge(p.status, p.status)}<p>` + (p.status === 'Waiting' ? `Queue position <b>${waiting(p.dept).indexOf(p) + 1}</b> · estimated wait <b>${waitOf(p)} min</b> (simulated)` : p.status === 'Completed' ? 'Your consultation is complete.' : `Please proceed to ${docName(p.doctor)}.`) + '</p>';
+}
+$('#tk-go').onclick = track; $('#tk-ref').onclick = () => { track(); renderMore(); toast('Queue refreshed'); };
+$('#roomFs').onclick = () => { const v = $('#roomView').classList.toggle('full'); $('#roomFs').textContent = v ? '✕ Exit presentation' : '⛶ Presentation mode'; };
+setInterval(() => $('#rclock').textContent = new Date().toLocaleTimeString(), 1000);
+$('#csvBtn2').onclick = () => $('#csvBtn').click(); $('#resetBtn2').onclick = () => $('#resetBtn').click();
+$('#printBtn').onclick = () => { try { window.print(); } catch (e) { toast('Print is not available in this view', 'error'); } };
+$('#s-toast').onchange = e => { S.set.toast = e.target.checked; save(); }; $('#s-sim').onchange = e => { S.set.sim = e.target.checked; save(); };
+setInterval(() => { if (!S.set.sim) return; const i = S.next++, d = DEPTS[Math.floor(Math.random() * DEPTS.length)];
+  S.patients.push({token:'T-' + i, name:'Sim Patient ' + i, age:20 + i % 50, gender:i % 2 ? 'Female' : 'Male', phone:'9000000000', dept:d, pref:'Any', symptoms:'Simulated arrival (fictional)', priority:['routine','routine','urgent','emergency'][Math.floor(Math.random() * 4)], arrival:now(), status:'Waiting', doctor:null, waited:null});
+  note('registration', `T-${i} registered for ${d} (simulated)`); save(); renderAll(); }, 20000);
+function setTheme(t) { document.documentElement.classList.toggle('dark', t === 'dark'); S.set.theme = t; $('#s-theme').value = t; save(); }
+$('#themeBtn').onclick = () => setTheme(S.set.theme === 'dark' ? 'light' : 'dark'); $('#s-theme').onchange = e => setTheme(e.target.value);
+$('#s-toast').checked = S.set.toast !== false; $('#s-sim').checked = !!S.set.sim;
+
+/* ---------- Init, clock & live refresh ---------- */
+fillSelect($('#r-dept'), DEPTS, 'Select department'); fillSelect($('#f-dept'), DEPTS, 'All departments'); fillSelect($('#p-dept'), DEPTS); fillSelect($('#w-dept'), DEPTS);
+const tick = () => $('#clock').textContent = new Date().toLocaleString([], {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', second:'2-digit'});
+tick(); setInterval(tick, 1000); setInterval(renderAll, 30000); // live refresh (waiting times age)
+setTheme(S.set.theme || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light')); renderAll(); route();
+
+</script>
+</body>
+</html>
